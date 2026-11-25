@@ -2,7 +2,9 @@
 from app.services.intent_service import IntentService
 from app.services.rag_service import RAGService
 from app.services.booking_service import BookingService
+import logging
 
+logger = logging.getLogger(__name__)
 
 class ChatService:
 
@@ -32,6 +34,7 @@ class ChatService:
             intent = self.intent_service.detect_intent(message)
 
         if intent == "booking":
+            logger.info("Booking Service Started")
 
             result = self.booking_service.handle_message(
                 db=db,
@@ -46,7 +49,7 @@ class ChatService:
                 "booking_id": result.get("booking_id"),
                 "booking_status": result["status"]
             }
-
+        
         result = self.rag_service.ask_question(
             question=message,
             session_id=session_id,

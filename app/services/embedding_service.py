@@ -1,7 +1,7 @@
 
-from langchain_community.embeddings.fastembed import (
-    FastEmbedEmbeddings
-)
+import logging
+logger = logging.getLogger(__name__)
+from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
 
 
 class EmbeddingService:
@@ -22,19 +22,29 @@ class EmbeddingService:
         self,
         texts: list[str]
     ) -> list[list[float]]:
-
-        if not texts:
-            return []
-
-        return self.embeddings.embed_documents(texts)
+        try:
+            logger.info("Embedding started")
+            if not texts:
+                return []
+            result=self.embeddings.embed_documents(texts)
+            logger.info("Embedding completed")
+            return result
+        except Exception:
+            logger.exception("Embedding Failed")
+            raise
+            
 
     def embed_query(self, query: str) -> list[float]:
+        try:
+            logger.info("Query Embedding Started")
+            if not query.strip():
+                raise ValueError("Query cannot be empty.")
+            logger.info("Query Embedding Completed")
 
-        if not query.strip():
-            raise ValueError("Query cannot be empty.")
-
-        return self.embeddings.embed_query(query)
-
+            return self.embeddings.embed_query(query)
+        except Exception:
+            logger.exception("Query Embedding Failed")
+            raise
     @property
     def vector_dimension(self) -> int:
 

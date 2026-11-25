@@ -14,7 +14,9 @@ from app.models.booking import BookingModel
 from app.schemas.booking import BookingExtraction, BookingDetails
 from app.repositories.booking_repository import BookingRepository
 
+import logging
 
+logger = logging.getLogger(__name__)
 TIMEZONE = ZoneInfo("Asia/Kathmandu")
 
 

@@ -5,7 +5,10 @@ from langchain_core.documents import Document
 
 from app.schemas.document import ChunkingStrategy
 
+import logging
 
+logger = logging.getLogger(__name__)
+ 
 class ChunkingService:
     """
     Split extracted document text into chunks.
@@ -62,59 +65,72 @@ class ChunkingService:
         text: str,
         metadata: dict | None
     ) -> list[Document]:
+        try:
+            logger.info("recursive chunking started")
 
-        chunks = self.recursive_splitter.create_documents(
-            texts=[text],
-            metadatas=[metadata or {}]
-        )
-
-        return self._add_chunk_metadata(
-            chunks,
-            ChunkingStrategy.RECURSIVE
-        )
+            chunks = self.recursive_splitter.create_documents(
+                texts=[text],
+                metadatas=[metadata or {}]
+            )
+            logger.info("Recursive chunking completed")
+            return self._add_chunk_metadata(
+                chunks,
+                ChunkingStrategy.RECURSIVE
+            )
+            
+        except Exception:
+            logger.exception("Recursive chunking not completed")
 
     def _fixed_chunk(
         self,
         text: str,
         metadata: dict | None
     ) -> list[Document]:
+        try:
+            logger.info("fixed size chunking started")
+            chunks = []
+            start = 0
+            step = self.chunk_size - self.chunk_overlap
 
-        chunks = []
+            while start < len(text):
 
-        start = 0
-        step = self.chunk_size - self.chunk_overlap
+                end = start + self.chunk_size
 
-        while start < len(text):
+                chunk_text = text[start:end].strip()
 
-            end = start + self.chunk_size
-
-            chunk_text = text[start:end].strip()
-
-            if chunk_text:
-                chunks.append(
-                    Document(
-                        page_content=chunk_text,
-                        metadata=metadata or {}
+                if chunk_text:
+                    chunks.append(
+                        Document(
+                            page_content=chunk_text,
+                            metadata=metadata or {}
+                        )
                     )
-                )
 
-            start += step
-
-        return self._add_chunk_metadata(
-            chunks,
-            ChunkingStrategy.FIXED
-        )
+                start += step
+            logger.info("fixed size chunking completed")
+            return self._add_chunk_metadata(
+                chunks,
+                ChunkingStrategy.FIXED
+            )
+            
+        except Exception:
+            logger.exception("fixed size chunking not completed")
 
     @staticmethod
     def _add_chunk_metadata(
         chunks: list[Document],
         strategy: ChunkingStrategy
     ) -> list[Document]:
-
-        for index, chunk in enumerate(chunks):
-            chunk.metadata.update({
-                "chunk_index": index,
-                "chunking_strategy": strategy.value
-            })
-
-        return chunks
+        try:
+            logger.info("Extracting document metadata")
+            for index, chunk in enumerate(chunks):
+                chunk.metadata.update({
+                    "chunk_index": index,
+                    "chunking_strategy": strategy.value
+                })
+            logger.info("Extraction of document metadata completed")
+            return chunks
+        
+            
+        except Exception:
+            logger.exception("Document metadata failed to extract")

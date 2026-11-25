@@ -5,9 +5,8 @@ from langchain_core.prompts import ChatPromptTemplate
 from app.core.config import settings
 from app.services.vector_service import VectorService
 from app.services.embedding_service import EmbeddingService
-
-
-
+import logging
+logger = logging.getLogger(__name__)
 from langchain_groq import ChatGroq
 from langchain_core.prompts import (
     ChatPromptTemplate,
@@ -169,49 +168,53 @@ class RAGService:
         session_id: str,
         top_k: int = 5
     ) -> dict:
-
-        # Step 1: Load conversation history
-        history = self.memory_service.get_history(
-            session_id
-        )
-
-        # Step 2: Rewrite follow-up question
-        standalone_question = self.rewrite_question(
-            question=question,
-            history=history
-        )
-
-        # Step 3: Retrieve relevant document chunks
-        retrieved_chunks = self.retrieve_documents(
-            question=standalone_question,
-            top_k=top_k
-        )
-
-        # Step 4: Generate answer
-        if not retrieved_chunks:
-            answer = (
-                "I could not find relevant information "
-                "in the uploaded documents."
+        
+        try:
+            logger.info("Rag Processing Started")
+            # Step 1: Load conversation history
+            history = self.memory_service.get_history(
+                session_id
             )
 
-        else:
-            messages = self.construct_prompt(
+            # Step 2: Rewrite follow-up question
+            standalone_question = self.rewrite_question(
                 question=question,
-                history=history,
-                retrieved_chunks=retrieved_chunks
+                history=history
             )
 
-            answer = self.generate_answer(messages)
+            # Step 3: Retrieve relevant document chunks
+            retrieved_chunks = self.retrieve_documents(
+                question=standalone_question,
+                top_k=top_k
+            )
 
-        # Step 5: Save the latest exchange
-        self.memory_service.add_exchange(
-            session_id=session_id,
-            question=question,
-            answer=answer
-        )
+            # Step 4: Generate answer
+            if not retrieved_chunks:
+                answer = (
+                    "I could not find relevant information "
+                    "in the uploaded documents."
+                )
 
-        return {
-            "session_id": session_id,
-            "answer": answer,
-            "sources": retrieved_chunks
-        }
+            else:
+                messages = self.construct_prompt(
+                    question=question,
+                    history=history,
+                    retrieved_chunks=retrieved_chunks
+                )
+
+                answer = self.generate_answer(messages)
+
+            # Step 5: Save the latest exchange
+            self.memory_service.add_exchange(
+                session_id=session_id,
+                question=question,
+                answer=answer
+            )
+
+            return {
+                "session_id": session_id,
+                "answer": answer,
+                "sources": retrieved_chunks
+            }
+        except Exception:
+            logger.exception("Rag Processing Failed ")
