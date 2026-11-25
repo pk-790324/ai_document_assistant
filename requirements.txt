@@ -1,0 +1,40 @@
+# Backend
+fastapi
+uvicorn[standard]
+python-multipart
+
+# LLM and RAG
+langchain
+langchain-core
+langchain-groq
+langchain-qdrant
+langchain-text-splitters
+langchain-community
+fastembed
+
+# Vector database
+qdrant-client
+
+# Database
+sqlalchemy
+psycopg[binary]
+
+# Redis
+redis
+
+# Document processing
+pymupdf
+
+# Validation and configuration
+pydantic
+python-dotenv
+pydantic-settings
+email-validator
+
+# Testing
+pytest
+httpx
+
+# frontend
+gradio
+requests
