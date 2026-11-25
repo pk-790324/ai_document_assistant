@@ -83,27 +83,10 @@ git clone <repository-url>
 cd ai_document_assistant
 ```
 
-Create and activate a virtual environment:
-
-**Windows (PowerShell):**
-
-```powershell
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-```
-
-**macOS/Linux:**
+Install dependencies and create the uv environment:
 
 ```bash
-python3 -m venv .venv
-source .venv/bin/activate
-```
-
-Install dependencies:
-
-```bash
-python -m pip install --upgrade pip
-pip install -r requirements.txt
+uv sync
 ```
 
 ## Configuration
@@ -174,7 +157,7 @@ docker compose down -v
 ### 1. Start the FastAPI backend
 
 ```bash
-uvicorn app.main:app --reload
+uv run uvicorn app.main:app --reload
 ```
 
 The backend is available at:
@@ -189,7 +172,7 @@ The backend is available at:
 Open another terminal, activate the virtual environment, and run:
 
 ```bash
-python main.py
+uv run python main.py
 ```
 
 Gradio launches a local web interface, usually at `http://127.0.0.1:7860`.
