@@ -52,6 +52,8 @@ ai_document_assistant/
 │   └── utils/            # Upload validation
 ├── tests/                # pytest test modules
 ├── main.py               # Gradio frontend
+├── docker-compose.yml    # PostgreSQL, Redis, and Qdrant services
+├── Dockerfile
 ├── pyproject.toml
 └── requirements.txt
 ```
@@ -61,16 +63,14 @@ ai_document_assistant/
 Install or start the following services:
 
 - Python 3.11 or newer
-- PostgreSQL
-- Redis
-- Qdrant
+- Docker and Docker Compose
 - A Groq API key
 
 The default local service URLs are:
 
 | Service | Default URL |
 |---|---|
-| PostgreSQL | Configure through `DATABASE_URL` |
+| PostgreSQL | `postgresql+psycopg://admin:12345@localhost:5433/document_assistant` |
 | Redis | `redis://localhost:6379/0` |
 | Qdrant | `http://localhost:6333` |
 
@@ -116,7 +116,7 @@ APP_NAME=AI Document Assistant
 DEBUG=True
 
 # PostgreSQL
-DATABASE_URL=postgresql+psycopg://<user>:<password>@<host>:<port>/<database>
+DATABASE_URL=postgresql+psycopg://admin:12345@localhost:5433/document_assistant
 
 # Redis
 REDIS_URL=redis://localhost:6379/0
@@ -127,7 +127,7 @@ QDRANT_COLLECTION=documents
 
 # Groq
 GROQ_API_KEY=<your-groq-api-key>
-GROQ_MODEL=llama-3.3-70b-versatile
+GROQ_MODEL=openai/gpt-oss-120b
 
 # Embeddings
 EMBEDDING_MODEL=BAAI/bge-small-en-v1.5
@@ -137,27 +137,41 @@ Keep API keys out of source control. If a Groq key has already been committed or
 
 ## Running the Application
 
-### 1. Start PostgreSQL
-
-Create a database and update `DATABASE_URL`. The application creates the `documents` and `bookings` tables automatically when the FastAPI lifespan starts.
-
-### 2. Start Redis
+Docker Compose starts PostgreSQL, Redis, and Qdrant together:
 
 ```bash
-redis-server
+docker compose up -d
 ```
 
-On Windows, Redis must be started through your Redis installation or service manager.
-
-### 3. Start Qdrant
-
-Using Docker:
+Check that all containers are running:
 
 ```bash
-docker run --name qdrant -p 6333:6333 -p 6334:6334 qdrant/qdrant
+docker compose ps
 ```
 
-### 4. Start the FastAPI backend
+The Compose file provides:
+
+| Container | Host port |
+|---|---|
+| `ai_postgres` | `5433` |
+| `ai_redis` | `6379` |
+| `ai_qdrant` | `6333` and `6334` |
+
+The application creates the `documents` and `bookings` tables automatically when the FastAPI lifespan starts.
+
+To stop the infrastructure containers:
+
+```bash
+docker compose down
+```
+
+This preserves database and vector data because Compose uses named volumes. To remove the volumes and their stored data as well:
+
+```bash
+docker compose down -v
+```
+
+### 1. Start the FastAPI backend
 
 ```bash
 uvicorn app.main:app --reload
@@ -170,7 +184,7 @@ The backend is available at:
 - ReDoc: `http://127.0.0.1:8000/redoc`
 - Health endpoint: `http://127.0.0.1:8000/health`
 
-### 5. Start the Gradio frontend
+### 2. Start the Gradio frontend
 
 Open another terminal, activate the virtual environment, and run:
 
