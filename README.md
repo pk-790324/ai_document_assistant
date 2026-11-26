@@ -1,55 +1,41 @@
 # AI Document Assistant
 
-AI Document Assistant is a FastAPI backend for uploading PDF/TXT documents, retrieving relevant content with vector search, and chatting with an LLM. It uses PostgreSQL, Redis, Qdrant, FastEmbed, and Groq.
+AI Document Assistant is a FastAPI backend for uploading PDF/TXT documents, retrieving relevant content with vector search, chatting with an LLM, and booking interviews through a conversational flow. It uses PostgreSQL, Redis, Qdrant, FastEmbed, and Groq.
 
 ## Run the backend locally
 
 ### Requirements
 
 - Python 3.11 or newer
+- [uv](https://docs.astral.sh/uv/)
 - Docker Desktop with Docker Compose (used here to run PostgreSQL, Redis, and Qdrant)
 - A Groq API key to use the chat endpoint
 
-The repository has a Compose file for the supporting services; the API itself runs as a regular Python application. A Gradio frontend is not needed to run or test the API.
+The repository's `docker-compose.yml` declares PostgreSQL, Redis, and Qdrant only; it does not define an API or frontend container. `docker compose up -d` starts all three supporting services, and `uv` runs the API separately. A Gradio frontend is not needed to run or test the API.
 
 ### 1. Get the code and install dependencies
 
 ```bash
 git clone <repository-url>
 cd ai_document_assistant
-python -m venv .venv
+uv venv
 ```
 
-Activate the virtual environment:
-
-**Windows PowerShell**
-
-```powershell
-.\.venv\Scripts\Activate.ps1
-```
-
-**macOS/Linux**
+In Git Bash on Windows, install the dependencies listed in `requirements.txt` into the new environment:
 
 ```bash
-source .venv/bin/activate
-```
-
-Install the project's dependencies from `requirements.txt`:
-
-```bash
-python -m pip install --upgrade pip
-python -m pip install -r requirements.txt
+uv pip install --python .venv/Scripts/python.exe -r requirements.txt
 ```
 
 ### 2. Start the supporting services
 
-From the project directory, start PostgreSQL, Redis, and Qdrant:
+From the project directory, start every service declared in `docker-compose.yml`:
 
 ```bash
-docker compose up -d postgres redis qdrant
+docker compose up -d
 ```
 
-Wait until PostgreSQL is ready:
+This starts PostgreSQL, Redis, and Qdrant in the background. Check their status with:
 
 ```bash
 docker compose ps
@@ -85,7 +71,7 @@ The database URL and local service credentials above match the development setti
 ### 4. Start the API
 
 ```bash
-python -m uvicorn app.main:app --reload
+uv run --no-sync python -m uvicorn app.main:app --reload
 ```
 
 Uvicorn starts the API at `http://127.0.0.1:8000`. On startup, the application creates its PostgreSQL tables. The first embedding request may take longer because FastEmbed downloads its model.
@@ -119,6 +105,8 @@ You can try the endpoint in Swagger UI by expanding **POST /api/v1/documents/ing
 ```
 
 `message` is required (1–2000 characters); `session_id` is optional and generated when omitted; `top_k` is optional (1–10, defaults to 5). Chat requests need working Redis, Qdrant, and a valid `GROQ_API_KEY`. Upload a document first to ask questions about its content.
+
+The same chat endpoint supports interview booking. Ask to schedule an interview, then provide the requested candidate name, email, date, and time. The assistant asks for explicit confirmation before saving the booking. Booking drafts are kept in Redis, confirmed bookings are stored in PostgreSQL, and booking times use the `Asia/Kathmandu` timezone.
 
 ## Stop the services
 
