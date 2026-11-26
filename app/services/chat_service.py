@@ -21,8 +21,7 @@ class ChatService:
         self,
         db,
         message: str,
-        session_id: str,
-        top_k: int = 5
+        session_id: str
     ) -> dict:
 
         # Continue booking if an unfinished draft exists
@@ -52,8 +51,7 @@ class ChatService:
         
         result = self.rag_service.ask_question(
             question=message,
-            session_id=session_id,
-            top_k=top_k
+            session_id=session_id
         )
 
         return {

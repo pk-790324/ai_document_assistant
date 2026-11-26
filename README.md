@@ -99,12 +99,11 @@ You can try the endpoint in Swagger UI by expanding **POST /api/v1/documents/ing
 ```json
 {
   "message": "Summarize the uploaded document.",
-  "session_id": "optional-session-id",
-  "top_k": 5
+  "session_id": "optional-session-id"
 }
 ```
 
-`message` is required (1–2000 characters); `session_id` is optional and generated when omitted; `top_k` is optional (1–10, defaults to 5). Chat requests need working Redis, Qdrant, and a valid `GROQ_API_KEY`. Upload a document first to ask questions about its content.
+`message` is required (1–2000 characters); `session_id` is optional and generated when omitted. Chat requests need working Redis, Qdrant, and a valid `GROQ_API_KEY`. Upload a document first to ask questions about its content.
 
 The same chat endpoint supports interview booking. Ask to schedule an interview, then provide the requested candidate name, email, date, and time. The assistant asks for explicit confirmation before saving the booking. Booking drafts are kept in Redis, confirmed bookings are stored in PostgreSQL, and booking times use the `Asia/Kathmandu` timezone.
 

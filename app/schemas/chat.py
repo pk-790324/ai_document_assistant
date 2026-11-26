@@ -14,12 +14,6 @@ class ChatRequest(BaseModel):
         max_length=100
     )
 
-    top_k: int = Field(
-        default=5,
-        ge=1,
-        le=10
-    )
-
 
 class SourceDocument(BaseModel):
     text: str

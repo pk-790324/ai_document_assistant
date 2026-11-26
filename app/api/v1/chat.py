@@ -29,8 +29,7 @@ def chat(
         result = chat_service.process_message(
             db=db,
             message=request.message,
-            session_id=session_id,
-            top_k=request.top_k
+            session_id=session_id
         )
 
         return ChatResponse(
