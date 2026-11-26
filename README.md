@@ -124,4 +124,4 @@ Compose uses named volumes, so the database, Redis, and Qdrant data are retained
 - **Database connection refused:** Check `docker compose ps` and wait for PostgreSQL to finish starting.
 - **Redis or Qdrant connection errors:** Confirm their containers are running and their `.env` URLs use `localhost` with the ports shown above.
 - **Chat fails:** Check that `GROQ_API_KEY` is valid and that Redis and Qdrant are available.
-- **PowerShell blocks virtual environment activation:** Run `python -m pip install -r requirements.txt` using the active Python environment, or use Command Prompt activation with `.\.venv\Scripts\activate.bat`.
+- **uv cannot find the environment:** Run the commands from the repository root and recreate the environment with `uv venv` before installing requirements.
