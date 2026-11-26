@@ -9,7 +9,6 @@ langchain-core
 langchain-groq
 langchain-qdrant
 langchain-text-splitters
-langchain-community
 fastembed
 
 # Vector database
@@ -33,6 +32,7 @@ email-validator
 
 # Testing
 pytest
+pytest-mock
 httpx
 
 # frontend

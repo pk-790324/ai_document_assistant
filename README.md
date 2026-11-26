@@ -1,232 +1,114 @@
 # AI Document Assistant
 
-AI Document Assistant is a document-aware chat application built with FastAPI, LangChain, Qdrant, PostgreSQL, Redis, Groq, FastEmbed, and Gradio.
+AI Document Assistant is a FastAPI backend for uploading PDF/TXT documents, retrieving relevant content with vector search, and chatting with an LLM. It uses PostgreSQL, Redis, Qdrant, FastEmbed, and Groq.
 
-It provides:
+## Run the backend locally
 
-- PDF and TXT document ingestion
-- Recursive or fixed-size text chunking
-- Semantic document search using vector embeddings
-- Retrieval-Augmented Generation (RAG) chat
-- Conversation history stored in Redis
-- Interview booking through a structured multi-turn conversation
-- Confirmed bookings persisted in PostgreSQL
-- A Gradio web interface and REST API
-
-## How It Works
-
-1. A user uploads a PDF or TXT file through the Gradio interface or API.
-2. The backend validates and extracts the document text.
-3. The text is split into chunks using the selected chunking strategy.
-4. FastEmbed creates vector embeddings for each chunk.
-5. Chunk vectors and metadata are stored in Qdrant.
-6. Chat messages are classified as document-related questions or interview booking requests.
-7. RAG questions retrieve relevant chunks and generate an answer with Groq.
-8. Booking details are collected in Redis before the confirmed booking is stored in PostgreSQL.
-
-## Technology Stack
-
-- **Backend:** FastAPI, Uvicorn
-- **Frontend:** Gradio
-- **LLM:** Groq through LangChain
-- **Embeddings:** FastEmbed with `BAAI/bge-small-en-v1.5`
-- **Vector database:** Qdrant
-- **Session and booking drafts:** Redis
-- **Relational database:** PostgreSQL and SQLAlchemy
-- **Document processing:** PyMuPDF for PDF files
-- **Validation:** Pydantic and Pydantic Settings
-- **Testing:** pytest and httpx
-
-## Project Structure
-
-```text
-ai_document_assistant/
-├── app/
-│   ├── api/v1/           # FastAPI chat and document routes
-│   ├── core/             # Application settings and logging
-│   ├── database/         # SQLAlchemy engine and database session
-│   ├── models/           # PostgreSQL document and booking models
-│   ├── repositories/     # Database repository operations
-│   ├── schemas/          # Request and response models
-│   ├── services/         # RAG, chat, booking, chunking, and vector services
-│   └── utils/            # Upload validation
-├── tests/                # pytest test modules
-├── main.py               # Gradio frontend
-├── docker-compose.yml    # PostgreSQL, Redis, and Qdrant services
-├── Dockerfile
-├── pyproject.toml
-└── requirements.txt
-```
-
-## Prerequisites
-
-Install or start the following services:
+### Requirements
 
 - Python 3.11 or newer
-- Docker and Docker Compose
-- A Groq API key
+- Docker Desktop with Docker Compose (used here to run PostgreSQL, Redis, and Qdrant)
+- A Groq API key to use the chat endpoint
 
-The default local service URLs are:
+The repository has a Compose file for the supporting services; the API itself runs as a regular Python application. A Gradio frontend is not needed to run or test the API.
 
-| Service | Default URL |
-|---|---|
-| PostgreSQL | `postgresql+psycopg://admin:12345@localhost:5433/document_assistant` |
-| Redis | `redis://localhost:6379/0` |
-| Qdrant | `http://localhost:6333` |
-
-## Installation
-
-Clone the repository and enter the project directory:
+### 1. Get the code and install dependencies
 
 ```bash
 git clone <repository-url>
 cd ai_document_assistant
+python -m venv .venv
 ```
 
-Install dependencies and create the uv environment:
+Activate the virtual environment:
+
+**Windows PowerShell**
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+**macOS/Linux**
 
 ```bash
-uv sync
+source .venv/bin/activate
 ```
 
-## Configuration
-
-Create a `.env` file in the project root:
-
-```dotenv
-# Application
-APP_NAME=AI Document Assistant
-DEBUG=True
-
-# PostgreSQL
-DATABASE_URL=postgresql+psycopg://admin:12345@localhost:5433/document_assistant
-
-# Redis
-REDIS_URL=redis://localhost:6379/0
-
-# Qdrant
-QDRANT_URL=http://localhost:6333
-QDRANT_COLLECTION=documents
-
-# Groq
-GROQ_API_KEY=<your-groq-api-key>
-GROQ_MODEL=openai/gpt-oss-120b
-
-# Embeddings
-EMBEDDING_MODEL=BAAI/bge-small-en-v1.5
-```
-
-Keep API keys out of source control. If a Groq key has already been committed or shared, revoke it and create a replacement key.
-
-## Running the Application
-
-Docker Compose starts PostgreSQL, Redis, and Qdrant together:
+Install the project's dependencies from `requirements.txt`:
 
 ```bash
-docker compose up -d
+python -m pip install --upgrade pip
+python -m pip install -r requirements.txt
 ```
 
-Check that all containers are running:
+### 2. Start the supporting services
+
+From the project directory, start PostgreSQL, Redis, and Qdrant:
+
+```bash
+docker compose up -d postgres redis qdrant
+```
+
+Wait until PostgreSQL is ready:
 
 ```bash
 docker compose ps
 ```
 
-The Compose file provides:
+The Compose file publishes these local ports:
 
-| Container | Host port |
+| Service | Address |
 |---|---|
-| `ai_postgres` | `5433` |
-| `ai_redis` | `6379` |
-| `ai_qdrant` | `6333` and `6334` |
+| PostgreSQL | `localhost:5433` |
+| Redis | `localhost:6379` |
+| Qdrant HTTP API | `localhost:6333` |
+| Qdrant gRPC | `localhost:6334` |
 
-The application creates the `documents` and `bookings` tables automatically when the FastAPI lifespan starts.
+### 3. Configure the application
 
-To stop the infrastructure containers:
+Create a file named `.env` in the project root with the following settings. Replace the Groq placeholder with your own key:
+
+```dotenv
+APP_NAME=AI Document Assistant
+DEBUG=True
+DATABASE_URL=postgresql+psycopg://admin:12345@localhost:5433/document_assistant
+REDIS_URL=redis://localhost:6379/0
+QDRANT_URL=http://localhost:6333
+QDRANT_COLLECTION=documents
+GROQ_API_KEY=your-groq-api-key
+GROQ_MODEL=openai/gpt-oss-120b
+EMBEDDING_MODEL=BAAI/bge-small-en-v1.5
+```
+
+The database URL and local service credentials above match the development settings in `docker-compose.yml`. Keep `.env` private and never commit real API keys.
+
+### 4. Start the API
 
 ```bash
-docker compose down
+python -m uvicorn app.main:app --reload
 ```
 
-This preserves database and vector data because Compose uses named volumes. To remove the volumes and their stored data as well:
+Uvicorn starts the API at `http://127.0.0.1:8000`. On startup, the application creates its PostgreSQL tables. The first embedding request may take longer because FastEmbed downloads its model.
 
-```bash
-docker compose down -v
-```
+Open the interactive API documentation in a browser:
 
-### 1. Start the FastAPI backend
+- Swagger UI: <http://127.0.0.1:8000/docs>
+- ReDoc: <http://127.0.0.1:8000/redoc>
+- API root: <http://127.0.0.1:8000/>
 
-```bash
-uv run uvicorn app.main:app --reload
-```
+Use `/docs` to inspect endpoints, submit requests, and see their schemas directly in your browser. The API root (`GET /`) returns a JSON status message. There is no separate `/health` endpoint.
 
-The backend is available at:
+## API endpoints
 
-- API root: `http://127.0.0.1:8000`
-- Swagger UI: `http://127.0.0.1:8000/docs`
-- ReDoc: `http://127.0.0.1:8000/redoc`
-- Health endpoint: `http://127.0.0.1:8000/health`
+### Upload a document
 
-### 2. Start the Gradio frontend
+`POST /api/v1/documents/ingest` accepts a PDF or UTF-8 TXT file as multipart form data. The optional `chunking_strategy` is `recursive` (default) or `fixed`. Maximum upload size is 10 MB.
 
-Open another terminal, activate the virtual environment, and run:
+You can try the endpoint in Swagger UI by expanding **POST /api/v1/documents/ingest**, selecting **Try it out**, choosing a file, and executing the request.
 
-```bash
-uv run python main.py
-```
+### Send a chat message
 
-Gradio launches a local web interface, usually at `http://127.0.0.1:7860`.
-
-## API Endpoints
-
-### Health Check
-
-```http
-GET /health
-```
-
-Example response:
-
-```json
-{
-  "status": "healthy",
-  "message": "AI Document Assistant API is running"
-}
-```
-
-### Upload and Ingest a Document
-
-```http
-POST /api/v1/documents/ingest
-Content-Type: multipart/form-data
-```
-
-Form fields:
-
-- `file`: PDF or UTF-8 TXT file
-- `chunking_strategy`: `recursive` or `fixed`
-
-Example:
-
-```bash
-curl -X POST "http://127.0.0.1:8000/api/v1/documents/ingest" \
-  -F "file=@./document.pdf" \
-  -F "chunking_strategy=recursive"
-```
-
-Upload limits:
-
-- Maximum file size: 10 MB
-- Supported extensions: `.pdf` and `.txt`
-
-### Send a Chat Message
-
-```http
-POST /api/v1/chat/message
-Content-Type: application/json
-```
-
-Request body:
+`POST /api/v1/chat/message` accepts JSON:
 
 ```json
 {
@@ -236,54 +118,22 @@ Request body:
 }
 ```
 
-- `message`: Required, 1–2000 characters
-- `session_id`: Optional; omitted values receive a generated UUID
-- `top_k`: Optional, 1–10; defaults to 5
+`message` is required (1–2000 characters); `session_id` is optional and generated when omitted; `top_k` is optional (1–10, defaults to 5). Chat requests need working Redis, Qdrant, and a valid `GROQ_API_KEY`. Upload a document first to ask questions about its content.
 
-Example:
+## Stop the services
 
-```bash
-curl -X POST "http://127.0.0.1:8000/api/v1/chat/message" \
-  -H "Content-Type: application/json" \
-  -d "{\"message\":\"What is the main topic?\",\"top_k\":5}"
-```
-
-Example response:
-
-```json
-{
-  "session_id": "generated-or-supplied-session-id",
-  "intent": "rag",
-  "message": "The answer generated by the RAG service.",
-  "sources": [],
-  "booking_id": null,
-  "booking_status": null
-}
-```
-
-## Interview Booking Flow
-
-Start a booking by asking to schedule an interview. The booking service collects:
-
-- Candidate name
-- Email address
-- Interview date in `YYYY-MM-DD` format
-- Interview time in `HH:MM` 24-hour format
-
-The draft is retained in Redis for 24 hours. The assistant asks for missing details, validates that the appointment is in the future, and waits for explicit confirmation before saving a confirmed booking in PostgreSQL.
-
-Booking dates and times use the `Asia/Kathmandu` timezone.
-
-## Testing
-
-Run the test suite:
+Stop the API with **Ctrl+C**. Stop the supporting containers with:
 
 ```bash
-pytest
+docker compose down
 ```
 
-Run a single test module:
+Compose uses named volumes, so the database, Redis, and Qdrant data are retained. To remove the stored data as well, run `docker compose down -v`.
 
-```bash
-pytest tests/test_chat.py
-```
+## Troubleshooting
+
+- **Missing `DATABASE_URL`:** Confirm `.env` exists in the project root and contains the database settings above.
+- **Database connection refused:** Check `docker compose ps` and wait for PostgreSQL to finish starting.
+- **Redis or Qdrant connection errors:** Confirm their containers are running and their `.env` URLs use `localhost` with the ports shown above.
+- **Chat fails:** Check that `GROQ_API_KEY` is valid and that Redis and Qdrant are available.
+- **PowerShell blocks virtual environment activation:** Run `python -m pip install -r requirements.txt` using the active Python environment, or use Command Prompt activation with `.\.venv\Scripts\activate.bat`.

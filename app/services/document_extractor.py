@@ -1,5 +1,5 @@
 
-import fitz
+import pymupdf
 
 import logging
 
@@ -33,7 +33,7 @@ class DocumentExtractor:
     def _extract_pdf(self, content: bytes) -> str:
         try:
             logger.info("started pdf processing")
-            with fitz.open(
+            with pymupdf.open(
                 stream=content,
                 filetype="pdf"
             ) as pdf:

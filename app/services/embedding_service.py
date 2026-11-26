@@ -1,7 +1,9 @@
 
 import logging
+
+from fastembed import TextEmbedding
+
 logger = logging.getLogger(__name__)
-from langchain_community.embeddings.fastembed import FastEmbedEmbeddings
 
 
 class EmbeddingService:
@@ -14,8 +16,9 @@ class EmbeddingService:
         model_name: str = "BAAI/bge-small-en-v1.5"
     ) -> None:
 
-        self.embeddings = FastEmbedEmbeddings(
-            model_name=model_name
+        self.embeddings = TextEmbedding(
+            model_name=model_name,
+            max_length=512,
         )
 
     def embed_documents(
@@ -26,7 +29,7 @@ class EmbeddingService:
             logger.info("Embedding started")
             if not texts:
                 return []
-            result=self.embeddings.embed_documents(texts)
+            result = [vector.tolist() for vector in self.embeddings.embed(texts)]
             logger.info("Embedding completed")
             return result
         except Exception:
@@ -41,7 +44,7 @@ class EmbeddingService:
                 raise ValueError("Query cannot be empty.")
             logger.info("Query Embedding Completed")
 
-            return self.embeddings.embed_query(query)
+            return next(self.embeddings.query_embed(query)).tolist()
         except Exception:
             logger.exception("Query Embedding Failed")
             raise

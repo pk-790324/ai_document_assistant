@@ -81,10 +81,13 @@ app.include_router(
 
 app.include_router(chat_router, prefix="/api/v1")
 
-@app.get("/health")
-async def health_check():
-
+@app.get("/")
+async def root():
     return {
         "status": "healthy",
-        "message": "AI Document Assistant API is running"
+        "message": "AI Document Assistant API is running",
+        "docs": "/docs",
+        "health": "/health",
     }
+
+
