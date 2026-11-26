@@ -30,11 +30,4 @@ python-dotenv
 pydantic-settings
 email-validator
 
-# Testing
-pytest
-pytest-mock
-httpx
 
-# frontend
-gradio
-requests
